@@ -1,4 +1,4 @@
-# 🚀 Building and Deploying a Netflix Clone on AWS EKS with GitHub Actions CI/CD
+#  Building and Deploying a Netflix Clone on AWS EKS with GitHub Actions CI/CD
 
 In this project, I’ll walk you through how I built and deployed a full-stack **Netflix Clone** using modern DevOps best practices. The project integrates **GitHub Actions** for CI/CD, **SonarCloud** for code quality checks, **Trivy** for Docker image vulnerability scanning, **Docker Hub** for image storage, and **Terraform** for reusable AWS infrastructure — all deployed to a production-grade **AWS EKS cluster** with a managed node group.
 ---
