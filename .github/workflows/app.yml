@@ -33,20 +33,21 @@ jobs:
       - name: Code checkout
         uses: actions/checkout@v4
     
-      - name: Build & Upload image to ECR
-        uses: appleboy/docker-ecr-action@master
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-         access_key: ${{ env.AWS_ACCESS_KEY_ID }}
-         secret_key: ${{ env.AWS_SECRET_ACCESS_KEY }}
-         registry: ${{ env.REGISTRY }}
-         repo: ${{ env.ECR_REPOSITORY }}
-         region: ${{ env.AWS_REGION }}
-         tags: ${{ github.run_number }}
-         daemon_off: false
-         dockerfile: ./app/Dockerfile
-         context: ./app
-        env:
-         TMDB_V3_API_KEY: ${{ env.TMDB_V3_API_KEY }}
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        run: aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.REGISTRY }}
+
+      - name: Build and push Docker image
+        run: |
+          cd ./app
+          docker build --build-arg TMDB_V3_API_KEY="${{ env.TMDB_V3_API_KEY }}" -t ${{ env.REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.run_number }} .
+          docker push ${{ env.REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.run_number }}
   
   DeployToEKS:
     needs: BuildandPush
