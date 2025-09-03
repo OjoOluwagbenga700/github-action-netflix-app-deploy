@@ -109,5 +109,7 @@ jobs:
             echo "=== Pod Logs ==="
             kubectl logs -l app=netflix-app --tail=50
             echo "=== Check built files ==="
-            kubectl exec -l app=netflix-app -- find /usr/share/nginx/html -name "*.js" -exec grep -l "VITE_APP_TMDB" {} \;
+            POD_NAME=$(kubectl get pods -l app=netflix-app -o jsonpath='{.items[0].metadata.name}')
+            kubectl exec $POD_NAME -- ls -la /usr/share/nginx/html/
+            kubectl exec $POD_NAME -- find /usr/share/nginx/html -name "*.js" | head -1 | xargs -I {} kubectl exec $POD_NAME -- grep -c "VITE_APP_TMDB" {} || echo "API key not found in JS files"
     
