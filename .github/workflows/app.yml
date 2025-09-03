@@ -28,6 +28,7 @@ jobs:
 
   BuildandPush:
     runs-on: ubuntu-latest
+    needs: code_analysis
     steps:
       - name: Code checkout
         uses: actions/checkout@v4
@@ -42,8 +43,8 @@ jobs:
          region: ${{ env.AWS_REGION }}
          tags: latest,${{ github.run_number }}
          daemon_off: false
-         dockerfile: ./Dockerfile
-         context: ./
+         dockerfile: ./app/Dockerfile
+         context: ./app
         env:
          TMDB_V3_API_KEY: ${{ env.TMDB_V3_API_KEY }}
   
