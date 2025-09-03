@@ -108,4 +108,6 @@ jobs:
             kubectl describe ingress netflix-app-ingress
             echo "=== Pod Logs ==="
             kubectl logs -l app=netflix-app --tail=50
+            echo "=== Check built files ==="
+            kubectl exec -l app=netflix-app -- find /usr/share/nginx/html -name "*.js" -exec grep -l "VITE_APP_TMDB" {} \;
     
