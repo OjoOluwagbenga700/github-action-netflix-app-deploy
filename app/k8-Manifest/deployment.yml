@@ -18,7 +18,7 @@ spec:
       - name: regcred
       containers:
       - name: netflix-app
-        image: REGISTRY_PLACEHOLDER/REPO_PLACEHOLDER:latest
+        image: REGISTRY_PLACEHOLDER/REPO_PLACEHOLDER:BUILD_NUMBER_PLACEHOLDER
         ports:
         - containerPort: 80
         env:

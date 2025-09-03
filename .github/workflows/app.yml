@@ -41,7 +41,7 @@ jobs:
          registry: ${{ env.REGISTRY }}
          repo: ${{ env.ECR_REPOSITORY }}
          region: ${{ env.AWS_REGION }}
-         tags: latest,${{ github.run_number }}
+         tags: ${{ github.run_number }}
          daemon_off: false
          dockerfile: ./app/Dockerfile
          context: ./app
@@ -84,6 +84,7 @@ jobs:
           run: |
             sed -i "s|REGISTRY_PLACEHOLDER|${{ env.REGISTRY }}|g" ./app/k8-Manifest/deployment.yml
             sed -i "s|REPO_PLACEHOLDER|${{ env.ECR_REPOSITORY }}|g" ./app/k8-Manifest/deployment.yml
+            sed -i "s|BUILD_NUMBER_PLACEHOLDER|${{ github.run_number }}|g" ./app/k8-Manifest/deployment.yml
 
         - name: Deploy Kubernetes manifests
           run: |
