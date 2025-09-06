@@ -2,7 +2,8 @@ name: webapp-actions
 on:
   push:
     branches:
-        - main
+      - main
+  workflow_dispatch: # Manual trigger only
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
   ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
@@ -25,6 +26,8 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+
+ 
 
   BuildandPush:
     runs-on: ubuntu-latest
@@ -53,64 +56,49 @@ jobs:
     needs: BuildandPush
     runs-on: ubuntu-latest
     steps:
-        - name: Checkout source code
-          uses: actions/checkout@v4
+      - name: Checkout source code
+        uses: actions/checkout@v4
 
-        - name: Configure AWS credentials
-          uses: aws-actions/configure-aws-credentials@v4
-          with:
-            aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
-            aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
-            aws-region: ${{ env.AWS_REGION }}
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
         
-        - name: Get Kubernetes config
-          id: getconfig
-          run: aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER }} --region ${{ env.AWS_REGION }}
+      - name: Get Kubernetes config
+        id: getconfig
+        run: aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER }} --region ${{ env.AWS_REGION }}
 
-        - name: Login to ECR
-          run: |
-            kubectl get secret regcred || \
-            kubectl create secret docker-registry regcred \
-              --docker-server=${{ env.REGISTRY }} \
-              --docker-username=AWS \
-              --docker-password=$(aws ecr get-login-password)
+      - name: Login to ECR
+        run: |
+          kubectl get secret regcred || \
+          kubectl create secret docker-registry regcred \
+            --docker-server=${{ env.REGISTRY }} \
+            --docker-username=AWS \
+            --docker-password=$(aws ecr get-login-password)
 
-        - name: Create API key secret
-          run: |
-            kubectl create secret generic netflix-app-secrets \
-              --from-literal=tmdb-api-key="${{ env.TMDB_V3_API_KEY }}" \
-              --dry-run=client -o yaml | kubectl apply -f -
+      - name: Create API key secret
+        run: |
+          kubectl create secret generic netflix-app-secrets \
+            --from-literal=tmdb-api-key="${{ env.TMDB_V3_API_KEY }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
 
-        - name: Update deployment image
-          run: |
-            sed -i "s|REGISTRY_PLACEHOLDER|${{ env.REGISTRY }}|g" ./app/k8-Manifest/deployment.yml
-            sed -i "s|REPO_PLACEHOLDER|${{ env.ECR_REPOSITORY }}|g" ./app/k8-Manifest/deployment.yml
-            sed -i "s|BUILD_NUMBER_PLACEHOLDER|${{ github.run_number }}|g" ./app/k8-Manifest/deployment.yml
+      - name: Update deployment image
+        run: |
+          sed -i "s|REGISTRY_PLACEHOLDER|${{ env.REGISTRY }}|g" ./app/k8-Manifest/deployment.yml
+          sed -i "s|REPO_PLACEHOLDER|${{ env.ECR_REPOSITORY }}|g" ./app/k8-Manifest/deployment.yml
+          sed -i "s|BUILD_NUMBER_PLACEHOLDER|${{ github.run_number }}|g" ./app/k8-Manifest/deployment.yml
 
-        - name: Deploy Kubernetes manifests
-          run: |
-            kubectl apply -f ./app/k8-Manifest/deployment.yml
-            kubectl apply -f ./app/k8-Manifest/service.yml
-            kubectl apply -f ./app/k8-Manifest/ingress.yml
-        - name: Wait for deployment to be ready
-          run: |
-            kubectl rollout status deployment/netflix-app --timeout=300s || exit 1
-            kubectl get pods
+      - name: Deploy Kubernetes manifests
+        run: |
+          kubectl apply -f ./app/k8-Manifest/deployment.yml
+          kubectl apply -f ./app/k8-Manifest/service.yml
+        
+
+      - name: Wait for deployment to be ready
+        run: |
+          kubectl rollout status deployment/netflix-app --timeout=300s || exit 1
+          kubectl get pods
             
-        - name: Debug deployment status
-          run: |
-            echo "=== Pods ==="
-            kubectl get pods -o wide
-            echo "=== Services ==="
-            kubectl get svc
-            echo "=== Ingress ==="
-            kubectl get ingress
-            echo "=== Ingress Details ==="
-            kubectl describe ingress netflix-app-ingress
-            echo "=== Pod Logs ==="
-            kubectl logs -l app=netflix-app --tail=50
-            echo "=== Check built files ==="
-            POD_NAME=$(kubectl get pods -l app=netflix-app -o jsonpath='{.items[0].metadata.name}')
-            kubectl exec $POD_NAME -- ls -la /usr/share/nginx/html/
-            kubectl exec $POD_NAME -- find /usr/share/nginx/html -name "*.js" | head -1 | xargs -I {} kubectl exec $POD_NAME -- grep -c "VITE_APP_TMDB" {} || echo "API key not found in JS files"
-    
+        
