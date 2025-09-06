@@ -27,4 +27,4 @@ spec:
             secretKeyRef:
               name: netflix-app-secrets
               key: tmdb-api-key
-  
+  #
