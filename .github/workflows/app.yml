@@ -48,8 +48,7 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          cd ./app
-          docker build --build-arg TMDB_V3_API_KEY="${{ env.TMDB_V3_API_KEY }}" -t ${{ env.REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.run_number }} .
+          docker build --build-arg TMDB_V3_API_KEY="${{ env.TMDB_V3_API_KEY }}" -t ${{ env.REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.run_number }} ./app
           docker push ${{ env.REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.run_number }}
   
   DeployToEKS:
